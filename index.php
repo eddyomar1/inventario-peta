@@ -12,6 +12,7 @@
 
     <h1 class="text-2xl font-bold text-center mb-6">Inventario de Materiales</h1>
 
+
     <!-- == CONTENEDOR PRINCIPAL == -->
     <!-- Móvil: columnas apiladas; md+: dos columnas lado a lado -->
     <div class="flex flex-col md:flex-row gap-6">
