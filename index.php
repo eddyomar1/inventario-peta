@@ -10,15 +10,15 @@
 
   <div class="w-full max-w-6xl bg-white rounded-lg shadow-lg p-6">
 
-    <h1 class="text-2xl font-bold text-center mb-6">Inventario de Materiales</h1>
+    <h1 class="text-2xl font-bold text-center mb-6">
+      Inventario de Materiales
+    </h1>
 
+    <!-- CONTENEDOR: siempre una sola columna -->
+    <div class="flex flex-col gap-6">
 
-    <!-- == CONTENEDOR PRINCIPAL == -->
-    <!-- Móvil: columnas apiladas; md+: dos columnas lado a lado -->
-    <div class="flex flex-col md:flex-row gap-6">
-
-      <!-- == COLUMNA FORMULARIO == -->
-      <div class="md:w-1/2 overflow-auto max-h-[80vh]">
+      <!-- FORMULARIO: ancho completo -->
+      <div class="w-full overflow-auto max-h-[60vh]">
         <form id="materialForm" class="space-y-4">
           <input type="hidden" id="id" name="id"/>
 
@@ -53,8 +53,8 @@
         </form>
       </div>
 
-      <!-- == COLUMNA TABLA == -->
-      <div class="md:w-1/2 overflow-auto max-h-[80vh]">
+      <!-- TABLA: debajo del formulario, ancho completo -->
+      <div class="w-full overflow-x-auto max-h-[60vh]">
         <table class="w-full table-auto divide-y divide-gray-200">
           <thead class="bg-gray-100 sticky top-0">
             <tr>
@@ -70,7 +70,7 @@
             </tr>
           </thead>
           <tbody id="tableBody" class="divide-y divide-gray-100">
-            <!-- Filas generadas dinámicamente -->
+            <!-- Filas dinámicas -->
           </tbody>
         </table>
       </div>
@@ -79,6 +79,7 @@
   </div>
 
   <script>
+  // Aquí va exactamente el mismo JavaScript que antes:
   document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('materialForm')
             .addEventListener('submit', e => { e.preventDefault(); saveMaterial(); });
@@ -90,17 +91,19 @@
   async function loadMaterials() {
     const res  = await fetch('crud.php?action=read');
     const data = await res.json();
+    renderTable(data);
+  }
+
+  function renderTable(data) {
     const tbody = document.getElementById('tableBody');
     tbody.innerHTML = '';
     const now = new Date();
-
     data.forEach(item => {
       const updated  = new Date(item.updated_at);
       const diffDays = Math.floor((now - updated)/(1000*60*60*24));
-      let dateClass  = '';
-      if (diffDays <= 10)      dateClass = 'bg-green-100';
-      else if (diffDays <= 30) dateClass = 'bg-yellow-100';
-      else                      dateClass = 'bg-red-100';
+      let dateClass  = diffDays <= 10 ? 'bg-green-100'
+                      : diffDays <= 30 ? 'bg-yellow-100'
+                      : 'bg-red-100';
 
       const tr = document.createElement('tr');
       tr.innerHTML = `
@@ -134,8 +137,8 @@
       resetForm();
       loadMaterials();
     } else {
-      console.error('Error al guardar:', json);
-      alert('Error al guardar:\n' + (json.error || JSON.stringify(json)));
+      console.error('Error:', json);
+      alert('Error al guardar:\n' + (json.error||JSON.stringify(json)));
     }
   }
 
