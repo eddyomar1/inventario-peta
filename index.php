@@ -10,15 +10,13 @@
 
   <div class="w-full max-w-6xl bg-white rounded-lg shadow-lg p-6">
 
-    <h1 class="text-2xl font-bold text-center mb-6">
-      Inventario de Materiales
-    </h1>
+    <h1 class="text-2xl font-bold text-center mb-6">Inventario de Materiales</h1>
 
     <!-- CONTENEDOR: siempre una sola columna -->
     <div class="flex flex-col gap-6">
 
       <!-- FORMULARIO: ancho completo -->
-      <div class="w-full overflow-auto max-h-[60vh]">
+      <div class="w-full">
         <form id="materialForm" class="space-y-4">
           <input type="hidden" id="id" name="id"/>
 
@@ -54,7 +52,7 @@
       </div>
 
       <!-- TABLA: debajo del formulario, ancho completo -->
-      <div class="w-full overflow-x-auto max-h-[60vh]">
+      <div class="w-full">
         <table class="w-full table-auto divide-y divide-gray-200">
           <thead class="bg-gray-100 sticky top-0">
             <tr>
@@ -79,7 +77,6 @@
   </div>
 
   <script>
-  // Aquí va exactamente el mismo JavaScript que antes:
   document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('materialForm')
             .addEventListener('submit', e => { e.preventDefault(); saveMaterial(); });
