@@ -17,7 +17,7 @@ $action = isset($_REQUEST['action']) ? $_REQUEST['action'] : '';
 
 // 3) Leer todos los registros
 if ($action === 'read') {
-    $res = $con->query("SELECT * FROM standartCrud ORDER BY id DESC");
+    $res = $con->query("SELECT * FROM standartCrud ORDER BY nombre DESC");
     $data = [];
     while ($row = $res->fetch_assoc()) {
         $data[] = $row;
