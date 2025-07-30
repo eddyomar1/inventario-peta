@@ -10,12 +10,13 @@
 
   <div class="w-full max-w-6xl bg-white rounded-lg shadow-lg p-6">
 
-    <h1 class="text-2xl font-bold text-center mb-6">Inventario de Materiales</h1>
+    <h1 class="text-2xl font-bold text-center mb-6">
+      Inventario de Materiales
+    </h1>
 
-    <!-- CONTENEDOR: siempre una sola columna -->
     <div class="flex flex-col gap-6">
 
-      <!-- FORMULARIO: ancho completo -->
+      <!-- FORMULARIO -->
       <div class="w-full">
         <form id="materialForm" class="space-y-4">
           <input type="hidden" id="id" name="id"/>
@@ -51,7 +52,17 @@
         </form>
       </div>
 
-      <!-- TABLA: debajo del formulario, ancho completo -->
+      <!-- BUSCADOR -->
+      <div class="w-full">
+        <input
+          id="searchInput"
+          type="text"
+          placeholder="🔍 Buscar por nombre..."
+          class="mb-4 w-full p-2 border rounded-md focus:ring focus:ring-indigo-200"
+        />
+      </div>
+
+      <!-- TABLA -->
       <div class="w-full">
         <table class="w-full table-auto divide-y divide-gray-200">
           <thead class="bg-gray-100 sticky top-0">
@@ -77,30 +88,49 @@
   </div>
 
   <script>
+  let materials = [];
+
   document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('materialForm')
-            .addEventListener('submit', e => { e.preventDefault(); saveMaterial(); });
-    document.getElementById('cancelEdit')
-            .addEventListener('click', resetForm);
+    const form       = document.getElementById('materialForm');
+    const cancelBtn  = document.getElementById('cancelEdit');
+    const searchInput= document.getElementById('searchInput');
+
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+      saveMaterial();
+    });
+    cancelBtn.addEventListener('click', resetForm);
+    searchInput.addEventListener('input', () => {
+      const term = searchInput.value.trim().toLowerCase();
+      renderTable(
+        materials.filter(item =>
+          item.nombre.toLowerCase().includes(term)
+        )
+      );
+    });
+
     loadMaterials();
   });
 
   async function loadMaterials() {
     const res  = await fetch('crud.php?action=read');
-    const data = await res.json();
-    renderTable(data);
+    materials = await res.json();
+    renderTable(materials);
   }
 
   function renderTable(data) {
     const tbody = document.getElementById('tableBody');
     tbody.innerHTML = '';
     const now = new Date();
+
     data.forEach(item => {
       const updated  = new Date(item.updated_at);
       const diffDays = Math.floor((now - updated)/(1000*60*60*24));
-      let dateClass  = diffDays <= 10 ? 'bg-green-100'
-                      : diffDays <= 30 ? 'bg-yellow-100'
-                      : 'bg-red-100';
+      const dateClass = diffDays <= 10
+        ? 'bg-green-100'
+        : diffDays <= 30
+          ? 'bg-yellow-100'
+          : 'bg-red-100';
 
       const tr = document.createElement('tr');
       tr.innerHTML = `
@@ -130,7 +160,7 @@
 
     const res  = await fetch('crud.php',{ method:'POST', body:fd });
     const json = await res.json();
-    if (json.status==='success') {
+    if (json.status === 'success') {
       resetForm();
       loadMaterials();
     } else {
@@ -148,8 +178,7 @@
     document.getElementById('descripcion').value   = cells[4].textContent;
     document.getElementById('departamentos').value = cells[5].textContent;
     document.getElementById('cantidad').value      = cells[6].textContent;
-    document.getElementById('cancelEdit')
-            .classList.remove('hidden');
+    document.getElementById('cancelEdit').classList.remove('hidden');
   }
 
   async function deleteMaterial(id) {
@@ -166,8 +195,7 @@
   function resetForm() {
     document.getElementById('materialForm').reset();
     document.getElementById('id').value = '';
-    document.getElementById('cancelEdit')
-            .classList.add('hidden');
+    document.getElementById('cancelEdit').classList.add('hidden');
   }
   </script>
 </body>
