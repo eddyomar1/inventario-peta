@@ -73,8 +73,8 @@
             <tr>
               <th class="px-4 py-2 text-left">ID</th>
               <th class="px-4 py-2 text-left">Nombre</th>
-              <th class="px-4 py-2 text-left">Otros Nombres</th>
-              <th class="px-4 py-2 text-left">Código</th>
+              <!-- <th class="px-4 py-2 text-left">Otros Nombres</th> -->
+              <!-- <th class="px-4 py-2 text-left">Código</th> -->
               <th class="px-4 py-2 text-left">Descripción</th>
               <th class="px-4 py-2 text-left">Departamentos</th>
               <th class="px-4 py-2 text-right">Cantidad</th>
@@ -142,12 +142,14 @@
           ? 'bg-yellow-100'
           : 'bg-red-100';
 
+          //  <td class="px-4 py-2">${item.otros_nombres}</td>
+        //  <td class="px-4 py-2">${item.codigo}</td>
+
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td class="px-4 py-2">${item.id}</td>
         <td class="px-4 py-2">${item.nombre}</td>
-        <td class="px-4 py-2">${item.otros_nombres}</td>
-        <td class="px-4 py-2">${item.codigo}</td>
+
         <td class="px-4 py-2">${item.descripcion}</td>
         <td class="px-4 py-2">${item.departamentos}</td>
         <td class="px-4 py-2 text-right">${item.cantidad}</td>
