@@ -10,9 +10,7 @@
 
   <div class="w-full max-w-6xl bg-white rounded-lg shadow-lg p-6">
 
-    <h1 class="text-2xl font-bold text-center mb-6">
-      Inventario de Materiales
-    </h1>
+    <h1 class="text-2xl font-bold text-center mb-6">Inventario de Materiales</h1>
 
     <div class="flex flex-col gap-6">
 
@@ -52,7 +50,7 @@
         </form>
       </div>
 
-      <!-- BUSCADOR -->
+      <!-- BUSCADOR + TOGGLE COLUMNAS -->
       <div class="w-full flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <input
           id="searchInput"
@@ -61,9 +59,9 @@
           class="flex-1 p-2 border rounded-md focus:ring focus:ring-indigo-200"
         />
         <button
-          id="toggleActionsBtn"
+          id="toggleColsBtn"
           class="p-2 bg-gray-200 rounded-md hover:bg-gray-300"
-        >Ocultar Acciones</button>
+        >Ocultar columnas</button>
       </div>
 
       <!-- TABLA -->
@@ -73,13 +71,13 @@
             <tr>
               <th class="px-4 py-2 text-left">ID</th>
               <th class="px-4 py-2 text-left">Nombre</th>
-              <!-- <th class="px-4 py-2 text-left">Otros Nombres</th> -->
-              <!-- <th class="px-4 py-2 text-left">Código</th> -->
+              <th class="px-4 py-2 text-left toggle-col">Otros Nombres</th>
+              <th class="px-4 py-2 text-left toggle-col">Código</th>
               <th class="px-4 py-2 text-left">Descripción</th>
               <th class="px-4 py-2 text-left">Departamentos</th>
               <th class="px-4 py-2 text-right">Cantidad</th>
               <th class="px-4 py-2 text-left">Última Actualización</th>
-              <th class="px-4 py-2 text-center actions-col">Acciones</th>
+              <th class="px-4 py-2 text-center toggle-col">Acciones</th>
             </tr>
           </thead>
           <tbody id="tableBody" class="divide-y divide-gray-100">
@@ -93,16 +91,18 @@
 
   <script>
   let materials = [];
-  let showActions = true;
+  let colsVisible = true;
 
   document.addEventListener('DOMContentLoaded', () => {
     const form        = document.getElementById('materialForm');
     const cancelBtn   = document.getElementById('cancelEdit');
     const searchInput = document.getElementById('searchInput');
-    const toggleBtn   = document.getElementById('toggleActionsBtn');
+    const toggleBtn   = document.getElementById('toggleColsBtn');
 
     form.addEventListener('submit', e => { e.preventDefault(); saveMaterial(); });
     cancelBtn.addEventListener('click', resetForm);
+
+    // Buscador
     searchInput.addEventListener('input', () => {
       const term = searchInput.value.trim().toLowerCase();
       renderTable(
@@ -111,12 +111,16 @@
         )
       );
     });
+
+    // Toggle columnas Otros Nombres, Código y Acciones
     toggleBtn.addEventListener('click', () => {
-      showActions = !showActions;
-      document.querySelectorAll('.actions-col').forEach(el => {
-        el.style.display = showActions ? '' : 'none';
+      colsVisible = !colsVisible;
+      document.querySelectorAll('.toggle-col').forEach(el => {
+        el.style.display = colsVisible ? '' : 'none';
       });
-      toggleBtn.textContent = showActions ? 'Ocultar Acciones' : 'Mostrar Acciones';
+      toggleBtn.textContent = colsVisible 
+        ? 'Ocultar columnas' 
+        : 'Mostrar columnas';
     });
 
     loadMaterials();
@@ -142,19 +146,17 @@
           ? 'bg-yellow-100'
           : 'bg-red-100';
 
-          //  <td class="px-4 py-2">${item.otros_nombres}</td>
-        //  <td class="px-4 py-2">${item.codigo}</td>
-
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td class="px-4 py-2">${item.id}</td>
         <td class="px-4 py-2">${item.nombre}</td>
-
+        <td class="px-4 py-2 toggle-col">${item.otros_nombres}</td>
+        <td class="px-4 py-2 toggle-col">${item.codigo}</td>
         <td class="px-4 py-2">${item.descripcion}</td>
         <td class="px-4 py-2">${item.departamentos}</td>
         <td class="px-4 py-2 text-right">${item.cantidad}</td>
         <td class="px-4 py-2 ${dateClass}">${item.updated_at}</td>
-        <td class="px-4 py-2 text-center space-x-2 actions-col">
+        <td class="px-4 py-2 text-center space-x-2 toggle-col">
           <button onclick="editMaterial(this, ${item.id})"
                   class="text-indigo-600 hover:underline">Editar</button>
           <button onclick="deleteMaterial(${item.id})"
@@ -163,9 +165,9 @@
       tbody.appendChild(tr);
     });
 
-    // Aplicar visibilidad actual a la columna de acciones
-    document.querySelectorAll('.actions-col').forEach(el => {
-      el.style.display = showActions ? '' : 'none';
+    // Aplicar visibilidad actual (por si se re-renderiza con búsqueda)
+    document.querySelectorAll('.toggle-col').forEach(el => {
+      el.style.display = colsVisible ? '' : 'none';
     });
   }
 
