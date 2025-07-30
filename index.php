@@ -129,6 +129,13 @@
   async function loadMaterials() {
     const res       = await fetch('crud.php?action=read');
     materials       = await res.json();
+
+
+    materials.sort((a, b) => 
+      a.nombre.localeCompare(b.nombre, 'es', { numeric: true, sensitivity: 'base' })
+    );
+
+
     renderTable(materials);
   }
 
