@@ -5,6 +5,21 @@
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title>CRUD Inventario de Materiales</title>
   <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    @media print {
+      /* Ocultar todo lo que no sea la tabla */
+      form,
+      #searchInput,
+      #toggleColsBtn {
+        display: none !important;
+      }
+      /* Ajustar el contenedor para que la tabla ocupe todo el ancho */
+      table {
+        width: 100% !important;
+      }
+    }
+  </style>
 </head>
 <body class="bg-gray-50 min-h-screen flex items-center justify-center p-4">
 
