@@ -53,13 +53,17 @@
       </div>
 
       <!-- BUSCADOR -->
-      <div class="w-full">
+      <div class="w-full flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <input
           id="searchInput"
           type="text"
           placeholder="🔍 Buscar por nombre..."
-          class="mb-4 w-full p-2 border rounded-md focus:ring focus:ring-indigo-200"
+          class="flex-1 p-2 border rounded-md focus:ring focus:ring-indigo-200"
         />
+        <button
+          id="toggleActionsBtn"
+          class="p-2 bg-gray-200 rounded-md hover:bg-gray-300"
+        >Ocultar Acciones</button>
       </div>
 
       <!-- TABLA -->
@@ -75,7 +79,7 @@
               <th class="px-4 py-2 text-left">Departamentos</th>
               <th class="px-4 py-2 text-right">Cantidad</th>
               <th class="px-4 py-2 text-left">Última Actualización</th>
-              <th class="px-4 py-2 text-center">Acciones</th>
+              <th class="px-4 py-2 text-center actions-col">Acciones</th>
             </tr>
           </thead>
           <tbody id="tableBody" class="divide-y divide-gray-100">
@@ -89,16 +93,15 @@
 
   <script>
   let materials = [];
+  let showActions = true;
 
   document.addEventListener('DOMContentLoaded', () => {
-    const form       = document.getElementById('materialForm');
-    const cancelBtn  = document.getElementById('cancelEdit');
-    const searchInput= document.getElementById('searchInput');
+    const form        = document.getElementById('materialForm');
+    const cancelBtn   = document.getElementById('cancelEdit');
+    const searchInput = document.getElementById('searchInput');
+    const toggleBtn   = document.getElementById('toggleActionsBtn');
 
-    form.addEventListener('submit', e => {
-      e.preventDefault();
-      saveMaterial();
-    });
+    form.addEventListener('submit', e => { e.preventDefault(); saveMaterial(); });
     cancelBtn.addEventListener('click', resetForm);
     searchInput.addEventListener('input', () => {
       const term = searchInput.value.trim().toLowerCase();
@@ -108,13 +111,20 @@
         )
       );
     });
+    toggleBtn.addEventListener('click', () => {
+      showActions = !showActions;
+      document.querySelectorAll('.actions-col').forEach(el => {
+        el.style.display = showActions ? '' : 'none';
+      });
+      toggleBtn.textContent = showActions ? 'Ocultar Acciones' : 'Mostrar Acciones';
+    });
 
     loadMaterials();
   });
 
   async function loadMaterials() {
-    const res  = await fetch('crud.php?action=read');
-    materials = await res.json();
+    const res       = await fetch('crud.php?action=read');
+    materials       = await res.json();
     renderTable(materials);
   }
 
@@ -142,13 +152,18 @@
         <td class="px-4 py-2">${item.departamentos}</td>
         <td class="px-4 py-2 text-right">${item.cantidad}</td>
         <td class="px-4 py-2 ${dateClass}">${item.updated_at}</td>
-        <td class="px-4 py-2 text-center space-x-2">
+        <td class="px-4 py-2 text-center space-x-2 actions-col">
           <button onclick="editMaterial(this, ${item.id})"
                   class="text-indigo-600 hover:underline">Editar</button>
           <button onclick="deleteMaterial(${item.id})"
                   class="text-red-600 hover:underline">Eliminar</button>
         </td>`;
       tbody.appendChild(tr);
+    });
+
+    // Aplicar visibilidad actual a la columna de acciones
+    document.querySelectorAll('.actions-col').forEach(el => {
+      el.style.display = showActions ? '' : 'none';
     });
   }
 
@@ -178,7 +193,8 @@
     document.getElementById('descripcion').value   = cells[4].textContent;
     document.getElementById('departamentos').value = cells[5].textContent;
     document.getElementById('cantidad').value      = cells[6].textContent;
-    document.getElementById('cancelEdit').classList.remove('hidden');
+    document.getElementById('cancelEdit')
+            .classList.remove('hidden');
   }
 
   async function deleteMaterial(id) {
@@ -195,7 +211,8 @@
   function resetForm() {
     document.getElementById('materialForm').reset();
     document.getElementById('id').value = '';
-    document.getElementById('cancelEdit').classList.add('hidden');
+    document.getElementById('cancelEdit')
+            .classList.add('hidden');
   }
   </script>
 </body>
