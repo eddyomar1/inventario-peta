@@ -240,6 +240,11 @@
     document.getElementById('cantidad').value      = cells[6].textContent;
     document.getElementById('cancelEdit')
             .classList.remove('hidden');
+  
+   document
+    .getElementById('materialForm')
+    .scrollIntoView({ behavior: 'smooth', block: 'start' });
+
   }
 
   async function deleteMaterial(id) {
