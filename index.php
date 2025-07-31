@@ -18,6 +18,25 @@
       table {
         width: 100% !important;
       }
+    
+    
+      thead { 
+    display: table-header-group; 
+  }
+
+  /* Evita que una <tr> se rompa en dos páginas */
+  tr {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  /* Opcional: fuerza que cada grupo <tbody> no se divida */
+  tbody {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+    
     }
   </style>
 </head>
