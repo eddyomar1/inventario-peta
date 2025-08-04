@@ -8,7 +8,13 @@
 
   <style>
     @media print {
-      /* Repite siempre el <thead> en cada página */
+      /* Ocultar todo lo que no sea la tabla */
+      form,
+      #searchInput,
+      #toggleColsBtn {
+        display: none !important;
+      }
+      /* Ajustar el contenedor para que la tabla ocupe todo el ancho */
       thead {
         display: table-header-group;
       }
@@ -35,6 +41,9 @@
         orphans: 1;
         widows: 1;
       }
+    }
+
+    
     }
   </style>
 </head>
