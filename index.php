@@ -8,35 +8,33 @@
 
   <style>
     @media print {
-      /* Ocultar todo lo que no sea la tabla */
-      form,
-      #searchInput,
-      #toggleColsBtn {
-        display: none !important;
+      /* Repite siempre el <thead> en cada página */
+      thead {
+        display: table-header-group;
       }
-      /* Ajustar el contenedor para que la tabla ocupe todo el ancho */
+      /* Asegura que el pie, si lo hubiera, también se repita */
+      tfoot {
+        display: table-footer-group;
+      }
+      /* Evita cortes dentro de la tabla y de cada fila */
       table {
-        width: 100% !important;
+        page-break-inside: auto !important;
       }
-    
-    
-      thead { 
-    display: table-header-group; 
-  }
-
-  /* Evita que una <tr> se rompa en dos páginas */
-  tr {
-    page-break-inside: avoid !important;
-    break-inside: avoid !important;
-  }
-
-  /* Opcional: fuerza que cada grupo <tbody> no se divida */
-  tbody {
-    page-break-inside: avoid !important;
-    break-inside: avoid !important;
-  }
-
-    
+      tr {
+        page-break-inside: avoid !important;
+        page-break-after: auto !important;
+        break-inside: avoid !important;
+      }
+      td, th {
+        page-break-inside: avoid !important;
+        page-break-after: auto !important;
+        break-inside: avoid !important;
+      }
+      /* Opcional: control de viudas / huérfanas */
+      .table, tr {
+        orphans: 1;
+        widows: 1;
+      }
     }
   </style>
 </head>
