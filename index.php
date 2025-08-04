@@ -141,7 +141,8 @@
       const term = searchInput.value.trim().toLowerCase();
       renderTable(
         materials.filter(item =>
-          item.nombre.toLowerCase().includes(term)
+        item.nombre.toLowerCase().includes(term) ||
+        item.descripcion.toLowerCase().includes(term)
         )
       );
     });
