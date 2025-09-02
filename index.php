@@ -13,9 +13,46 @@
     .sort-btn.active.desc .arrow::before { content:"↓"; opacity:1; }
 
     /* Evitar cortes de filas al imprimir (opcional, útil) */
-    @media print{
+    /* @media print{
       tr, td, th { break-inside: avoid; }
-    }
+    } */
+
+      @media print {
+      /* Ocultar todo lo que no sea la tabla */
+      form,
+      #searchInput,
+      #toggleColsBtn {
+        display: none !important;
+      }
+      /* Ajustar el contenedor para que la tabla ocupe todo el ancho */
+      thead {
+        display: table-header-group;
+      }
+      /* Asegura que el pie, si lo hubiera, también se repita */
+      tfoot {
+        display: table-footer-group;
+      }
+      /* Evita cortes dentro de la tabla y de cada fila */
+      table {
+        page-break-inside: auto !important;
+      }
+      tr {
+        page-break-inside: avoid !important;
+        page-break-after: auto !important;
+        break-inside: avoid !important;
+      }
+      td, th {
+        page-break-inside: avoid !important;
+        page-break-after: auto !important;
+        break-inside: avoid !important;
+      }
+      /* Opcional: control de viudas / huérfanas */
+      .table, tr {
+        orphans: 1;
+        widows: 1;
+      }
+      }
+
   </style>
 </head>
 <body class="bg-gray-50 min-h-screen flex items-center justify-center p-4">
