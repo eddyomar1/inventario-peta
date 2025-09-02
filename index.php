@@ -5,272 +5,339 @@
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title>CRUD Inventario de Materiales</title>
   <script src="https://cdn.tailwindcss.com"></script>
-
   <style>
-    @media print {
-      /* Ocultar todo lo que no sea la tabla */
-      form,
-      #searchInput,
-      #toggleColsBtn {
-        display: none !important;
-      }
-      /* Ajustar el contenedor para que la tabla ocupe todo el ancho */
-      thead {
-        display: table-header-group;
-      }
-      /* Asegura que el pie, si lo hubiera, también se repita */
-      tfoot {
-        display: table-footer-group;
-      }
-      /* Evita cortes dentro de la tabla y de cada fila */
-      table {
-        page-break-inside: auto !important;
-      }
-      tr {
-        page-break-inside: avoid !important;
-        page-break-after: auto !important;
-        break-inside: avoid !important;
-      }
-      td, th {
-        page-break-inside: avoid !important;
-        page-break-after: auto !important;
-        break-inside: avoid !important;
-      }
-      /* Opcional: control de viudas / huérfanas */
-      .table, tr {
-        orphans: 1;
-        widows: 1;
-      }
-    }
+    /* Botones de orden */
+    .sort-btn { display:inline-flex; align-items:center; gap:.35rem; font-weight:600; color:#111827; }
+    .sort-btn .arrow::before { content:"↕"; opacity:.35; }
+    .sort-btn.active.asc  .arrow::before { content:"↑"; opacity:1; }
+    .sort-btn.active.desc .arrow::before { content:"↓"; opacity:1; }
 
-    
+    /* Evitar cortes de filas al imprimir (opcional, útil) */
+    @media print{
+      tr, td, th { break-inside: avoid; }
     }
   </style>
 </head>
 <body class="bg-gray-50 min-h-screen flex items-center justify-center p-4">
 
-  <div class="w-full max-w-6xl bg-white rounded-lg shadow-lg p-6">
+  <div class="w-full max-w-7xl bg-white rounded-lg shadow-lg p-6">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+      <h1 class="text-2xl font-bold">Inventario de Materiales</h1>
 
-    <h1 class="text-2xl font-bold text-center mb-6">Inventario de Materiales</h1>
+      <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+        <input id="searchInput" type="text" placeholder="Buscar (nombre, código, etc.)"
+               class="w-full sm:w-80 p-3 border rounded-md focus:ring focus:ring-blue-200"/>
+        <button id="toggleExtrasBtn"
+                class="px-4 py-3 rounded-md bg-gray-100 hover:bg-gray-200 text-gray-800">
+          Ocultar columnas extra
+        </button>
+      </div>
+    </div>
 
-    <div class="flex flex-col gap-6">
-
+    <!-- Layout: móvil 1 col, md+ 2 cols -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
       <!-- FORMULARIO -->
-      <div class="w-full">
-        <form id="materialForm" class="space-y-4">
-          <input type="hidden" id="id" name="id"/>
+      <form id="materialForm" class="space-y-4">
+        <input type="hidden" id="id"/>
 
-          <input name="nombre" id="nombre" type="text" placeholder="Nombre" required
-                 class="block w-full p-3 border rounded-md focus:ring focus:ring-blue-200"/>
+        <input id="nombre"        type="text"   placeholder="Nombre"        required
+               class="block w-full p-3 border rounded-md focus:ring focus:ring-blue-200"/>
 
-          <input name="otros_nombres" id="otros_nombres" type="text" placeholder="Otros Nombres"
-                 class="block w-full p-3 border rounded-md focus:ring focus:ring-blue-200"/>
+        <input id="otros_nombres" type="text"   placeholder="Otros Nombres"
+               class="block w-full p-3 border rounded-md focus:ring focus:ring-blue-200"/>
 
-          <input name="codigo" id="codigo" type="text" placeholder="Código"
-                 class="block w-full p-3 border rounded-md focus:ring focus:ring-blue-200"/>
+        <input id="codigo"        type="text"   placeholder="Código"
+               class="block w-full p-3 border rounded-md focus:ring focus:ring-blue-200"/>
 
-          <input name="departamentos" id="departamentos" type="text" placeholder="Departamentos"
-                 class="block w-full p-3 border rounded-md focus:ring focus:ring-blue-200"/>
+        <input id="departamentos" type="text"   placeholder="Departamentos"
+               class="block w-full p-3 border rounded-md focus:ring focus:ring-blue-200"/>
 
-          <input name="cantidad" id="cantidad" type="number" placeholder="Cantidad" required
-                 class="block w-full p-3 border rounded-md focus:ring focus:ring-blue-200"/>
+        <input id="cantidad"      type="number" placeholder="Cantidad"      required
+               class="block w-full p-3 border rounded-md focus:ring focus:ring-blue-200"/>
 
-          <textarea name="descripcion" id="descripcion" rows="3" placeholder="Descripción"
-                    class="block w-full p-3 border rounded-md focus:ring focus:ring-blue-200"></textarea>
+        <textarea id="descripcion" rows="3" placeholder="Descripción"
+               class="block w-full p-3 border rounded-md focus:ring focus:ring-blue-200"></textarea>
 
-          <div class="flex space-x-4">
-            <button type="submit"
-                    class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-md">
-              Guardar
-            </button>
-            <button type="button" id="cancelEdit"
-                    class="flex-1 bg-gray-400 hover:bg-gray-500 text-white py-3 rounded-md hidden">
-              Cancelar
-            </button>
-          </div>
-        </form>
-      </div>
-
-      <!-- BUSCADOR + TOGGLE COLUMNAS -->
-      <div class="w-full flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-        <input
-          id="searchInput"
-          type="text"
-          placeholder="🔍 Buscar por nombre..."
-          class="flex-1 p-2 border rounded-md focus:ring focus:ring-indigo-200"
-        />
-        <button
-          id="toggleColsBtn"
-          class="p-2 bg-gray-200 rounded-md hover:bg-gray-300"
-        >Ocultar columnas</button>
-      </div>
+        <div class="flex gap-4">
+          <button type="submit"
+                  class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-md">
+            Guardar
+          </button>
+          <button type="button" id="cancelEdit"
+                  class="flex-1 bg-gray-400 hover:bg-gray-500 text-white py-3 rounded-md hidden">
+            Cancelar
+          </button>
+        </div>
+      </form>
 
       <!-- TABLA -->
       <div class="w-full">
-        <table class="w-full table-auto divide-y divide-gray-200">
-          <thead class="bg-gray-100 sticky top-0">
-            <tr>
-              <th class="px-4 py-2 text-left">ID</th>
-              <th class="px-4 py-2 text-left">Nombre</th>
-              <th class="px-4 py-2 text-left toggle-col">Otros Nombres</th>
-              <th class="px-4 py-2 text-left toggle-col">Código</th>
-              <th class="px-4 py-2 text-left">Descripción</th>
-              <th class="px-4 py-2 text-left">Departamentos</th>
-              <th class="px-4 py-2 text-right">Cantidad</th>
-              <th class="px-4 py-2 text-left">Última Actualización</th>
-              <th class="px-4 py-2 text-center toggle-col">Acciones</th>
-            </tr>
-          </thead>
-          <tbody id="tableBody" class="divide-y divide-gray-100">
-            <!-- Filas dinámicas -->
-          </tbody>
-        </table>
+        <div class="overflow-x-auto">
+          <table class="w-full table-auto divide-y divide-gray-200">
+            <thead class="bg-gray-100 sticky top-0 z-10">
+              <tr>
+                <th class="px-4 py-2 text-left">
+                  <button class="sort-btn" data-key="id">ID <span class="arrow"></span></button>
+                </th>
+                <th class="px-4 py-2 text-left">
+                  <button class="sort-btn" data-key="nombre">Nombre <span class="arrow"></span></button>
+                </th>
+                <th class="px-4 py-2 text-left col-otros-th">
+                  <button class="sort-btn" data-key="otros_nombres">Otros Nombres <span class="arrow"></span></button>
+                </th>
+                <th class="px-4 py-2 text-left col-codigo-th">
+                  <button class="sort-btn" data-key="codigo">Código <span class="arrow"></span></button>
+                </th>
+                <th class="px-4 py-2 text-left">
+                  <button class="sort-btn" data-key="descripcion">Descripción <span class="arrow"></span></button>
+                </th>
+                <th class="px-4 py-2 text-left">
+                  <button class="sort-btn" data-key="departamentos">Departamentos <span class="arrow"></span></button>
+                </th>
+                <th class="px-4 py-2 text-right">
+                  <button class="sort-btn" data-key="cantidad">Cantidad <span class="arrow"></span></button>
+                </th>
+                <th class="px-4 py-2 text-left">
+                  <button class="sort-btn" data-key="updated_at">Última Actualización <span class="arrow"></span></button>
+                </th>
+                <th class="px-4 py-2 text-center col-acciones-th">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody" class="divide-y divide-gray-100">
+              <!-- Filas generadas dinámicamente -->
+            </tbody>
+          </table>
+        </div>
       </div>
-
     </div>
   </div>
 
   <script>
-  let materials = [];
-  let colsVisible = true;
+  // ---------- Estado global ----------
+  let allMaterials = [];
+  let currentSort = { key: 'nombre', dir: 'asc' };
+  let searchQuery = '';
+  let hideExtras = false; // oculta: Otros Nombres, Código y Acciones
 
-  document.addEventListener('DOMContentLoaded', () => {
-    const form        = document.getElementById('materialForm');
-    const cancelBtn   = document.getElementById('cancelEdit');
-    const searchInput = document.getElementById('searchInput');
-    const toggleBtn   = document.getElementById('toggleColsBtn');
-
-    form.addEventListener('submit', e => { e.preventDefault(); saveMaterial(); });
-    cancelBtn.addEventListener('click', resetForm);
-
-    // Buscador
-    searchInput.addEventListener('input', () => {
-      const term = searchInput.value.trim().toLowerCase();
-      renderTable(
-        materials.filter(item =>
-        item.nombre.toLowerCase().includes(term) ||
-        item.descripcion.toLowerCase().includes(term)
-        )
-      );
-    });
-
-    // Toggle columnas Otros Nombres, Código y Acciones
-    toggleBtn.addEventListener('click', () => {
-      colsVisible = !colsVisible;
-      document.querySelectorAll('.toggle-col').forEach(el => {
-        el.style.display = colsVisible ? '' : 'none';
-      });
-      toggleBtn.textContent = colsVisible 
-        ? 'Ocultar columnas' 
-        : 'Mostrar columnas';
-    });
-
-    loadMaterials();
-  });
-
-  async function loadMaterials() {
-    const res       = await fetch('crud.php?action=read');
-    materials       = await res.json();
-
-
-    materials.sort((a, b) => 
-      a.nombre.localeCompare(b.nombre, 'es', { numeric: true, sensitivity: 'base' })
-    );
-
-
-    renderTable(materials);
+  // ---------- Utilidades ----------
+  const $ = (s) => document.querySelector(s);
+  function esc(s){
+    return String(s ?? '')
+      .replace(/&/g,'&amp;')
+      .replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;')
+      .replace(/'/g,'&#39;');
   }
-
-  function renderTable(data) {
-    const tbody = document.getElementById('tableBody');
-    tbody.innerHTML = '';
-    const now = new Date();
-
-    data.forEach(item => {
-      const updated  = new Date(item.updated_at);
-      const diffDays = Math.floor((now - updated)/(1000*60*60*24));
-      const dateClass = diffDays <= 10
-        ? 'bg-green-100'
-        : diffDays <= 30
-          ? 'bg-yellow-100'
-          : 'bg-red-100';
-
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td class="px-4 py-2">${item.id}</td>
-        <td class="px-4 py-2">${item.nombre}</td>
-        <td class="px-4 py-2 toggle-col">${item.otros_nombres}</td>
-        <td class="px-4 py-2 toggle-col">${item.codigo}</td>
-        <td class="px-4 py-2">${item.descripcion}</td>
-        <td class="px-4 py-2">${item.departamentos}</td>
-        <td class="px-4 py-2 text-right">${item.cantidad}</td>
-        <td class="px-4 py-2 ${dateClass}">${item.updated_at}</td>
-        <td class="px-4 py-2 text-center space-x-2 toggle-col">
-          <button onclick="editMaterial(this, ${item.id})"
-                  class="text-indigo-600 hover:underline">Editar</button>
-          <button onclick="deleteMaterial(${item.id})"
-                  class="text-red-600 hover:underline">Eliminar</button>
-        </td>`;
-      tbody.appendChild(tr);
-    });
-
-    // Aplicar visibilidad actual (por si se re-renderiza con búsqueda)
-    document.querySelectorAll('.toggle-col').forEach(el => {
-      el.style.display = colsVisible ? '' : 'none';
-    });
+  function ageClass(iso){
+    const t = Date.parse(String(iso).replace(' ', 'T'));
+    if (isNaN(t)) return 'bg-gray-100 text-gray-700';
+    const days = Math.floor((Date.now() - t) / 86400000);
+    if (days <= 10) return 'bg-green-100 text-green-700';
+    if (days <= 30) return 'bg-yellow-100 text-yellow-700';
+    return 'bg-red-100 text-red-700';
   }
-
-  async function saveMaterial() {
-    const form = document.getElementById('materialForm');
-    const fd   = new FormData(form);
-    const id   = form.id.value;
-    fd.append('action', id ? 'update' : 'create');
-
-    const res  = await fetch('crud.php',{ method:'POST', body:fd });
-    const json = await res.json();
-    if (json.status === 'success') {
-      resetForm();
-      loadMaterials();
-    } else {
-      console.error('Error:', json);
-      alert('Error al guardar:\n' + (json.error||JSON.stringify(json)));
+  function compareByKey(a,b,key,dir='asc'){
+    const d = dir === 'asc' ? 1 : -1;
+    let va = a?.[key], vb = b?.[key];
+    switch (key) {
+      case 'id':
+      case 'cantidad':
+        va = Number(va)||0; vb = Number(vb)||0;
+        return (va - vb) * d;
+      case 'updated_at': {
+        const da = Date.parse(String(va).replace(' ','T')) || 0;
+        const db = Date.parse(String(vb).replace(' ','T')) || 0;
+        return (da - db) * d;
+      }
+      default:
+        return String(va ?? '').localeCompare(String(vb ?? ''), 'es', {numeric:true, sensitivity:'base'}) * d;
     }
   }
 
-  function editMaterial(btn, id) {
-    const cells = btn.closest('tr').children;
-    document.getElementById('id').value            = id;
-    document.getElementById('nombre').value        = cells[1].textContent;
-    document.getElementById('otros_nombres').value = cells[2].textContent;
-    document.getElementById('codigo').value        = cells[3].textContent;
-    document.getElementById('descripcion').value   = cells[4].textContent;
-    document.getElementById('departamentos').value = cells[5].textContent;
-    document.getElementById('cantidad').value      = cells[6].textContent;
-    document.getElementById('cancelEdit')
-            .classList.remove('hidden');
-  
-   document
-    .getElementById('materialForm')
-    .scrollIntoView({ behavior: 'smooth', block: 'start' });
+  // ---------- Carga y render ----------
+  document.addEventListener('DOMContentLoaded', () => {
+    // Eventos de orden
+    document.querySelectorAll('.sort-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const key = btn.dataset.key;
+        if (currentSort.key === key) {
+          currentSort.dir = currentSort.dir === 'asc' ? 'desc' : 'asc';
+        } else {
+          currentSort.key = key;
+          currentSort.dir = 'asc';
+        }
+        updateSortUI();
+        renderTable();
+      });
+    });
 
+    // Buscador
+    $('#searchInput').addEventListener('input', (e) => {
+      searchQuery = e.target.value.toLowerCase();
+      renderTable();
+    });
+
+    // Toggle columnas extra
+    $('#toggleExtrasBtn').addEventListener('click', () => {
+      hideExtras = !hideExtras;
+      $('#toggleExtrasBtn').textContent = hideExtras
+        ? 'Mostrar columnas extra'
+        : 'Ocultar columnas extra';
+      applyExtrasVisibility();
+    });
+
+    // Form
+    $('#materialForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      await saveMaterial();
+    });
+    $('#cancelEdit').addEventListener('click', resetForm);
+
+    loadMaterials();
+    updateSortUI();
+  });
+
+  async function loadMaterials(){
+    const res  = await fetch('crud.php?action=read');
+    const data = await res.json();
+    allMaterials = Array.isArray(data) ? data : [];
+    renderTable();
   }
 
-  async function deleteMaterial(id) {
+  function updateSortUI(){
+    document.querySelectorAll('.sort-btn').forEach(b => {
+      b.classList.remove('active','asc','desc');
+      if (b.dataset.key === currentSort.key) {
+        b.classList.add('active', currentSort.dir);
+      }
+    });
+  }
+
+  function applyExtrasVisibility(){
+    const sel = [
+      '.col-otros-th', '.col-codigo-th', '.col-acciones-th',
+      '.col-otros-td', '.col-codigo-td', '.col-acciones-td'
+    ].join(',');
+    document.querySelectorAll(sel).forEach(el => {
+      if (hideExtras) el.classList.add('hidden');
+      else el.classList.remove('hidden');
+    });
+  }
+
+  function renderTable(){
+    // Filtrar por búsqueda
+    const q = searchQuery.trim();
+    let rows = allMaterials;
+    if (q) {
+      rows = rows.filter(it => {
+        const hay =
+          String(it.nombre ?? '').toLowerCase().includes(q) ||
+          String(it.codigo ?? '').toLowerCase().includes(q) ||
+          String(it.otros_nombres ?? '').toLowerCase().includes(q) ||
+          String(it.descripcion ?? '').toLowerCase().includes(q) ||
+          String(it.departamentos ?? '').toLowerCase().includes(q);
+        return hay;
+      });
+    }
+
+    // Ordenar
+    rows = [...rows].sort((a,b) => compareByKey(a,b,currentSort.key,currentSort.dir));
+
+    // Pintar
+    const tbody = $('#tableBody');
+    tbody.innerHTML = rows.map(item => `
+      <tr>
+        <td class="px-4 py-2">${esc(item.id)}</td>
+        <td class="px-4 py-2">${esc(item.nombre)}</td>
+        <td class="px-4 py-2 col-otros-td">${esc(item.otros_nombres)}</td>
+        <td class="px-4 py-2 col-codigo-td">${esc(item.codigo)}</td>
+        <td class="px-4 py-2">${esc(item.descripcion)}</td>
+        <td class="px-4 py-2">${esc(item.departamentos)}</td>
+        <td class="px-4 py-2 text-right">${esc(item.cantidad)}</td>
+        <td class="px-4 py-2">
+          <span class="inline-block px-2 py-1 rounded ${ageClass(item.updated_at)}">
+            ${esc(item.updated_at)}
+          </span>
+        </td>
+        <td class="px-4 py-2 text-center space-x-2 col-acciones-td">
+          <button class="text-indigo-600 hover:underline" onclick="editMaterialRow(${item.id})">Editar</button>
+          <button class="text-red-600 hover:underline" onclick="deleteMaterial(${item.id})">Eliminar</button>
+        </td>
+      </tr>
+    `).join('');
+
+    // Aplicar visibilidad de columnas extra tras pintar
+    applyExtrasVisibility();
+  }
+
+  // ---------- CRUD ----------
+  async function saveMaterial(){
+    const id            = $('#id').value;
+    const nombre        = $('#nombre').value.trim();
+    const otros_nombres = $('#otros_nombres').value.trim();
+    const codigo        = $('#codigo').value.trim();
+    const descripcion   = $('#descripcion').value.trim();
+    const departamentos = $('#departamentos').value.trim();
+    const cantidad      = $('#cantidad').value.trim();
+
+    if (!nombre || !cantidad){
+      alert('Nombre y Cantidad son obligatorios.');
+      return;
+    }
+
+    const fd = new FormData();
+    fd.append('nombre',        nombre);
+    fd.append('otros_nombres', otros_nombres);
+    fd.append('codigo',        codigo);
+    fd.append('descripcion',   descripcion);
+    fd.append('departamentos', departamentos);
+    fd.append('cantidad',      cantidad);
+
+    if (id) { fd.append('action','update'); fd.append('id', id); }
+    else    { fd.append('action','create'); }
+
+    const res  = await fetch('crud.php', { method:'POST', body:fd });
+    const json = await res.json();
+    if (json.status === 'success' || json.id) {
+      resetForm();
+      await loadMaterials();
+    } else {
+      alert('Ocurrió un error al guardar.');
+    }
+  }
+
+  function resetForm(){
+    $('#materialForm').reset();
+    $('#id').value = '';
+    $('#cancelEdit').classList.add('hidden');
+    // Subir al formulario en escritorio
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function editMaterialRow(id){
+    const row = [...$('#tableBody').children].find(tr => Number(tr.children[0].textContent.trim()) === Number(id));
+    if (!row) return;
+    $('#id').value            = id;
+    $('#nombre').value        = row.children[1].textContent.trim();
+    $('#otros_nombres').value = row.children[2].textContent.trim();
+    $('#codigo').value        = row.children[3].textContent.trim();
+    $('#descripcion').value   = row.children[4].textContent.trim();
+    $('#departamentos').value = row.children[5].textContent.trim();
+    $('#cantidad').value      = row.children[6].textContent.trim();
+    $('#cancelEdit').classList.remove('hidden');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  async function deleteMaterial(id){
     if (!confirm('¿Eliminar este material?')) return;
-    const fd   = new FormData();
+    const fd = new FormData();
     fd.append('action','delete');
     fd.append('id', id);
-    const res  = await fetch('crud.php',{ method:'POST', body:fd });
+    const res  = await fetch('crud.php', { method:'POST', body:fd });
     const json = await res.json();
-    if (json.status==='success') loadMaterials();
+    if (json.status === 'success') loadMaterials();
     else alert('Error al eliminar.');
-  }
-
-  function resetForm() {
-    document.getElementById('materialForm').reset();
-    document.getElementById('id').value = '';
-    document.getElementById('cancelEdit')
-            .classList.add('hidden');
   }
   </script>
 </body>
