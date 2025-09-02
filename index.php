@@ -37,7 +37,7 @@
     </div>
 
     <!-- Layout: móvil 1 col, md+ 2 cols -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div class="grid grid-cols-1 md:grid-cols-1 gap-6">
       <!-- FORMULARIO -->
       <form id="materialForm" class="space-y-4">
         <input type="hidden" id="id"/>
