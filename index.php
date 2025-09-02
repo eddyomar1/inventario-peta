@@ -20,7 +20,9 @@
 </head>
 <body class="bg-gray-50 min-h-screen flex items-center justify-center p-4">
 
-  <div class="w-full max-w-7xl bg-white rounded-lg shadow-lg p-6">
+  <!-- <div class="w-full max-w-7xl bg-white rounded-lg shadow-lg p-6"> -->
+  <div class="w-full max-w-screen-2xl bg-white rounded-lg shadow-lg p-6">
+
     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
       <h1 class="text-2xl font-bold">Inventario de Materiales</h1>
 
