@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-  <title>CRUD Inventario de Materiales</title>
+  <title>Inventario y Proyectos PETA</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     /* Botones de orden */
@@ -61,7 +61,19 @@
   <div class="w-full max-w-screen-2xl bg-white rounded-lg shadow-lg p-6">
 
     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-      <h1 class="text-2xl font-bold">Inventario de Materiales</h1>
+      <div>
+        <h1 class="text-2xl font-bold">Inventario PETA</h1>
+        <div class="mt-3 inline-flex rounded-md border border-gray-200 bg-gray-50 p-1">
+          <button id="materialsTab" type="button"
+                  class="section-tab px-4 py-2 rounded text-sm font-semibold bg-blue-600 text-white">
+            Materiales
+          </button>
+          <button id="projectsTab" type="button"
+                  class="section-tab px-4 py-2 rounded text-sm font-semibold text-gray-700 hover:bg-gray-100">
+            Proyectos
+          </button>
+        </div>
+      </div>
 
       <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
         <input id="searchInput" type="text" placeholder="Buscar (nombre, código, etc.)"
@@ -73,6 +85,7 @@
       </div>
     </div>
 
+    <section id="materialsSection">
     <!-- Layout: móvil 1 col, md+ 2 cols -->
     <div class="grid grid-cols-1 md:grid-cols-1 gap-6">
       <!-- FORMULARIO -->
@@ -149,12 +162,82 @@
         </div>
       </div>
     </div>
+    </section>
+
+    <section id="projectsSection" class="hidden">
+      <div class="grid grid-cols-1 gap-6">
+        <form id="projectForm" class="space-y-4">
+          <input type="hidden" id="project_id"/>
+
+          <input id="project_nombre" type="text" placeholder="Nombre del proyecto" required
+                 class="block w-full p-3 border rounded-md focus:ring focus:ring-blue-200"/>
+
+          <textarea id="project_caracteristicas" rows="4"
+                    placeholder="Características del gabinete o panel eléctrico"
+                    class="block w-full p-3 border rounded-md focus:ring focus:ring-blue-200"></textarea>
+
+          <textarea id="project_dispositivos" rows="4"
+                    placeholder="Dispositivos incluidos (PLC, breakers, contactores, fuentes, HMI, relés, sensores, etc.)"
+                    class="block w-full p-3 border rounded-md focus:ring focus:ring-blue-200"></textarea>
+
+          <textarea id="project_diagramas" rows="4"
+                    placeholder="Diagramas asociados (nombre, versión, enlace, ruta de archivo o notas)"
+                    class="block w-full p-3 border rounded-md focus:ring focus:ring-blue-200"></textarea>
+
+          <div class="flex gap-4">
+            <button type="submit"
+                    class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-md">
+              Guardar proyecto
+            </button>
+            <button type="button" id="cancelProjectEdit"
+                    class="flex-1 bg-gray-400 hover:bg-gray-500 text-white py-3 rounded-md hidden">
+              Cancelar
+            </button>
+          </div>
+        </form>
+
+        <div class="w-full">
+          <div class="overflow-x-auto">
+            <table class="w-full table-auto divide-y divide-gray-200">
+              <thead class="bg-gray-100 sticky top-0 z-10">
+                <tr>
+                  <th class="px-4 py-2 text-left">
+                    <button class="project-sort-btn sort-btn" data-key="id">ID <span class="arrow"></span></button>
+                  </th>
+                  <th class="px-4 py-2 text-left">
+                    <button class="project-sort-btn sort-btn" data-key="nombre">Proyecto <span class="arrow"></span></button>
+                  </th>
+                  <th class="px-4 py-2 text-left">
+                    <button class="project-sort-btn sort-btn" data-key="caracteristicas">Características <span class="arrow"></span></button>
+                  </th>
+                  <th class="px-4 py-2 text-left">
+                    <button class="project-sort-btn sort-btn" data-key="dispositivos">Dispositivos <span class="arrow"></span></button>
+                  </th>
+                  <th class="px-4 py-2 text-left">
+                    <button class="project-sort-btn sort-btn" data-key="diagramas">Diagramas <span class="arrow"></span></button>
+                  </th>
+                  <th class="px-4 py-2 text-left">
+                    <button class="project-sort-btn sort-btn" data-key="updated_at">Última Actualización <span class="arrow"></span></button>
+                  </th>
+                  <th class="px-4 py-2 text-center">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="projectsTableBody" class="divide-y divide-gray-100">
+                <!-- Filas generadas dinámicamente -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
   </div>
 
   <script>
   // ---------- Estado global ----------
   let allMaterials = [];
+  let allProjects = [];
   let currentSort = { key: 'nombre', dir: 'asc' };
+  let currentProjectSort = { key: 'nombre', dir: 'asc' };
   let searchQuery = '';
   let hideExtras = false; // oculta: Otros Nombres, Código y Acciones
 
@@ -176,6 +259,9 @@
     if (days <= 30) return 'bg-yellow-100 text-yellow-700';
     return 'bg-red-100 text-red-700';
   }
+  function nl2br(s){
+    return esc(s).replace(/\n/g, '<br>');
+  }
   function compareByKey(a,b,key,dir='asc'){
     const d = dir === 'asc' ? 1 : -1;
     let va = a?.[key], vb = b?.[key];
@@ -196,8 +282,11 @@
 
   // ---------- Carga y render ----------
   document.addEventListener('DOMContentLoaded', () => {
+    $('#materialsTab').addEventListener('click', () => showSection('materials'));
+    $('#projectsTab').addEventListener('click', () => showSection('projects'));
+
     // Eventos de orden
-    document.querySelectorAll('.sort-btn').forEach(btn => {
+    document.querySelectorAll('.sort-btn:not(.project-sort-btn)').forEach(btn => {
       btn.addEventListener('click', () => {
         const key = btn.dataset.key;
         if (currentSort.key === key) {
@@ -208,6 +297,20 @@
         }
         updateSortUI();
         renderTable();
+      });
+    });
+
+    document.querySelectorAll('.project-sort-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const key = btn.dataset.key;
+        if (currentProjectSort.key === key) {
+          currentProjectSort.dir = currentProjectSort.dir === 'asc' ? 'desc' : 'asc';
+        } else {
+          currentProjectSort.key = key;
+          currentProjectSort.dir = 'asc';
+        }
+        updateProjectSortUI();
+        renderProjectsTable();
       });
     });
 
@@ -233,9 +336,32 @@
     });
     $('#cancelEdit').addEventListener('click', resetForm);
 
+    $('#projectForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      await saveProject();
+    });
+    $('#cancelProjectEdit').addEventListener('click', resetProjectForm);
+
     loadMaterials();
+    loadProjects();
     updateSortUI();
+    updateProjectSortUI();
   });
+
+  function showSection(section){
+    const isProjects = section === 'projects';
+    $('#materialsSection').classList.toggle('hidden', isProjects);
+    $('#projectsSection').classList.toggle('hidden', !isProjects);
+    $('#searchInput').classList.toggle('hidden', isProjects);
+    $('#toggleExtrasBtn').classList.toggle('hidden', isProjects);
+
+    $('#materialsTab').className = isProjects
+      ? 'section-tab px-4 py-2 rounded text-sm font-semibold text-gray-700 hover:bg-gray-100'
+      : 'section-tab px-4 py-2 rounded text-sm font-semibold bg-blue-600 text-white';
+    $('#projectsTab').className = isProjects
+      ? 'section-tab px-4 py-2 rounded text-sm font-semibold bg-blue-600 text-white'
+      : 'section-tab px-4 py-2 rounded text-sm font-semibold text-gray-700 hover:bg-gray-100';
+  }
 
   async function loadMaterials(){
     const res  = await fetch('crud.php?action=read');
@@ -244,11 +370,27 @@
     renderTable();
   }
 
+  async function loadProjects(){
+    const res  = await fetch('crud.php?action=projects_read');
+    const data = await res.json();
+    allProjects = Array.isArray(data) ? data : [];
+    renderProjectsTable();
+  }
+
   function updateSortUI(){
-    document.querySelectorAll('.sort-btn').forEach(b => {
+    document.querySelectorAll('.sort-btn:not(.project-sort-btn)').forEach(b => {
       b.classList.remove('active','asc','desc');
       if (b.dataset.key === currentSort.key) {
         b.classList.add('active', currentSort.dir);
+      }
+    });
+  }
+
+  function updateProjectSortUI(){
+    document.querySelectorAll('.project-sort-btn').forEach(b => {
+      b.classList.remove('active','asc','desc');
+      if (b.dataset.key === currentProjectSort.key) {
+        b.classList.add('active', currentProjectSort.dir);
       }
     });
   }
@@ -310,6 +452,30 @@
     applyExtrasVisibility();
   }
 
+  function renderProjectsTable(){
+    const rows = [...allProjects].sort((a,b) => compareByKey(a,b,currentProjectSort.key,currentProjectSort.dir));
+
+    const tbody = $('#projectsTableBody');
+    tbody.innerHTML = rows.map(item => `
+      <tr>
+        <td class="px-4 py-2 align-top">${esc(item.id)}</td>
+        <td class="px-4 py-2 align-top font-semibold">${esc(item.nombre)}</td>
+        <td class="px-4 py-2 align-top whitespace-pre-line">${nl2br(item.caracteristicas)}</td>
+        <td class="px-4 py-2 align-top whitespace-pre-line">${nl2br(item.dispositivos)}</td>
+        <td class="px-4 py-2 align-top whitespace-pre-line">${nl2br(item.diagramas)}</td>
+        <td class="px-4 py-2 align-top">
+          <span class="inline-block px-2 py-1 rounded ${ageClass(item.updated_at)}">
+            ${esc(item.updated_at)}
+          </span>
+        </td>
+        <td class="px-4 py-2 align-top text-center space-x-2">
+          <button class="text-indigo-600 hover:underline" onclick="editProjectRow(${item.id})">Editar</button>
+          <button class="text-red-600 hover:underline" onclick="deleteProject(${item.id})">Eliminar</button>
+        </td>
+      </tr>
+    `).join('');
+  }
+
   // ---------- CRUD ----------
   async function saveMaterial(){
     const id            = $('#id').value;
@@ -346,11 +512,49 @@
     }
   }
 
+  async function saveProject(){
+    const id              = $('#project_id').value;
+    const nombre          = $('#project_nombre').value.trim();
+    const caracteristicas = $('#project_caracteristicas').value.trim();
+    const dispositivos    = $('#project_dispositivos').value.trim();
+    const diagramas       = $('#project_diagramas').value.trim();
+
+    if (!nombre){
+      alert('El nombre del proyecto es obligatorio.');
+      return;
+    }
+
+    const fd = new FormData();
+    fd.append('nombre',          nombre);
+    fd.append('caracteristicas', caracteristicas);
+    fd.append('dispositivos',    dispositivos);
+    fd.append('diagramas',       diagramas);
+
+    if (id) { fd.append('action','projects_update'); fd.append('id', id); }
+    else    { fd.append('action','projects_create'); }
+
+    const res  = await fetch('crud.php', { method:'POST', body:fd });
+    const json = await res.json();
+    if (json.status === 'success' || json.id) {
+      resetProjectForm();
+      await loadProjects();
+    } else {
+      alert('Ocurrió un error al guardar el proyecto.');
+    }
+  }
+
   function resetForm(){
     $('#materialForm').reset();
     $('#id').value = '';
     $('#cancelEdit').classList.add('hidden');
     // Subir al formulario en escritorio
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function resetProjectForm(){
+    $('#projectForm').reset();
+    $('#project_id').value = '';
+    $('#cancelProjectEdit').classList.add('hidden');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -368,6 +572,19 @@
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
+  function editProjectRow(id){
+    const item = allProjects.find(project => Number(project.id) === Number(id));
+    if (!item) return;
+    $('#project_id').value              = item.id;
+    $('#project_nombre').value          = item.nombre ?? '';
+    $('#project_caracteristicas').value = item.caracteristicas ?? '';
+    $('#project_dispositivos').value    = item.dispositivos ?? '';
+    $('#project_diagramas').value       = item.diagramas ?? '';
+    $('#cancelProjectEdit').classList.remove('hidden');
+    showSection('projects');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
   async function deleteMaterial(id){
     if (!confirm('¿Eliminar este material?')) return;
     const fd = new FormData();
@@ -377,6 +594,17 @@
     const json = await res.json();
     if (json.status === 'success') loadMaterials();
     else alert('Error al eliminar.');
+  }
+
+  async function deleteProject(id){
+    if (!confirm('¿Eliminar este proyecto?')) return;
+    const fd = new FormData();
+    fd.append('action','projects_delete');
+    fd.append('id', id);
+    const res  = await fetch('crud.php', { method:'POST', body:fd });
+    const json = await res.json();
+    if (json.status === 'success') loadProjects();
+    else alert('Error al eliminar el proyecto.');
   }
   </script>
 </body>
