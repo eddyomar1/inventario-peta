@@ -20,6 +20,7 @@ function ensureProjectsTable($con) {
         CREATE TABLE IF NOT EXISTS proyectosGabinetes (
           id INT AUTO_INCREMENT PRIMARY KEY,
           nombre VARCHAR(255) NOT NULL,
+          tipo VARCHAR(20) NOT NULL DEFAULT 'Gabinete',
           caracteristicas TEXT NULL,
           dispositivos TEXT NULL,
           diagramas TEXT NULL,
@@ -27,7 +28,16 @@ function ensureProjectsTable($con) {
           created_at DATETIME NOT NULL
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     ";
-    return $con->query($sql);
+    if (!$con->query($sql)) {
+        return false;
+    }
+
+    $col = $con->query("SHOW COLUMNS FROM proyectosGabinetes LIKE 'tipo'");
+    if ($col && $col->num_rows === 0) {
+        return $con->query("ALTER TABLE proyectosGabinetes ADD tipo VARCHAR(20) NOT NULL DEFAULT 'Gabinete' AFTER nombre");
+    }
+
+    return true;
 }
 
 // 3) Leer todos los registros
@@ -161,19 +171,21 @@ if ($action === 'projects_create') {
     }
 
     $nombre          = $_POST['nombre'];
-    $caracteristicas = $_POST['caracteristicas'];
-    $dispositivos    = $_POST['dispositivos'];
-    $diagramas       = $_POST['diagramas'];
+    $tipo            = isset($_POST['tipo']) ? $_POST['tipo'] : 'Gabinete';
+    $caracteristicas = isset($_POST['caracteristicas']) ? $_POST['caracteristicas'] : '';
+    $dispositivos    = isset($_POST['dispositivos']) ? $_POST['dispositivos'] : '[]';
+    $diagramas       = isset($_POST['diagramas']) ? $_POST['diagramas'] : '';
 
     $stmt = $con->prepare("
         INSERT INTO proyectosGabinetes
-          (nombre, caracteristicas, dispositivos, diagramas, updated_at, created_at)
+          (nombre, tipo, caracteristicas, dispositivos, diagramas, updated_at, created_at)
         VALUES
-          (?, ?, ?, ?, NOW(), NOW())
+          (?, ?, ?, ?, ?, NOW(), NOW())
     ");
     $stmt->bind_param(
-        "ssss",
+        "sssss",
         $nombre,
+        $tipo,
         $caracteristicas,
         $dispositivos,
         $diagramas
@@ -205,13 +217,15 @@ if ($action === 'projects_update') {
 
     $id              = $_POST['id'];
     $nombre          = $_POST['nombre'];
-    $caracteristicas = $_POST['caracteristicas'];
-    $dispositivos    = $_POST['dispositivos'];
-    $diagramas       = $_POST['diagramas'];
+    $tipo            = isset($_POST['tipo']) ? $_POST['tipo'] : 'Gabinete';
+    $caracteristicas = isset($_POST['caracteristicas']) ? $_POST['caracteristicas'] : '';
+    $dispositivos    = isset($_POST['dispositivos']) ? $_POST['dispositivos'] : '[]';
+    $diagramas       = isset($_POST['diagramas']) ? $_POST['diagramas'] : '';
 
     $stmt = $con->prepare("
         UPDATE proyectosGabinetes SET
           nombre          = ?,
+          tipo            = ?,
           caracteristicas = ?,
           dispositivos    = ?,
           diagramas       = ?,
@@ -219,8 +233,9 @@ if ($action === 'projects_update') {
         WHERE id = ?
     ");
     $stmt->bind_param(
-        "ssssi",
+        "sssssi",
         $nombre,
+        $tipo,
         $caracteristicas,
         $dispositivos,
         $diagramas,

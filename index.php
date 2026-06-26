@@ -172,13 +172,26 @@
           <input id="project_nombre" type="text" placeholder="Nombre del proyecto" required
                  class="block w-full p-3 border rounded-md focus:ring focus:ring-blue-200"/>
 
+          <select id="project_tipo" required
+                  class="block w-full p-3 border rounded-md bg-white focus:ring focus:ring-blue-200">
+            <option value="Gabinete">Gabinete</option>
+            <option value="Platina">Platina</option>
+          </select>
+
           <textarea id="project_caracteristicas" rows="4"
                     placeholder="Características del gabinete o panel eléctrico"
                     class="block w-full p-3 border rounded-md focus:ring focus:ring-blue-200"></textarea>
 
-          <textarea id="project_dispositivos" rows="4"
-                    placeholder="Dispositivos incluidos (PLC, breakers, contactores, fuentes, HMI, relés, sensores, etc.)"
-                    class="block w-full p-3 border rounded-md focus:ring focus:ring-blue-200"></textarea>
+          <div class="space-y-3">
+            <div class="flex items-center justify-between gap-3">
+              <h2 class="text-lg font-semibold">Dispositivos</h2>
+              <button id="addDeviceBtn" type="button"
+                      class="px-4 py-2 rounded-md bg-gray-100 hover:bg-gray-200 text-gray-800">
+                Agregar dispositivo
+              </button>
+            </div>
+            <div id="devicesList" class="space-y-3"></div>
+          </div>
 
           <textarea id="project_diagramas" rows="4"
                     placeholder="Diagramas asociados (nombre, versión, enlace, ruta de archivo o notas)"
@@ -206,6 +219,9 @@
                   </th>
                   <th class="px-4 py-2 text-left">
                     <button class="project-sort-btn sort-btn" data-key="nombre">Proyecto <span class="arrow"></span></button>
+                  </th>
+                  <th class="px-4 py-2 text-left">
+                    <button class="project-sort-btn sort-btn" data-key="tipo">Tipo <span class="arrow"></span></button>
                   </th>
                   <th class="px-4 py-2 text-left">
                     <button class="project-sort-btn sort-btn" data-key="caracteristicas">Características <span class="arrow"></span></button>
@@ -261,6 +277,36 @@
   }
   function nl2br(s){
     return esc(s).replace(/\n/g, '<br>');
+  }
+  function parseProjectDevices(value){
+    if (!value) return [];
+
+    try {
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed)) {
+        return parsed
+          .map(device => ({
+            nombre: String(device?.nombre ?? '').trim(),
+            caracteristicas: String(device?.caracteristicas ?? '').trim()
+          }))
+          .filter(device => device.nombre || device.caracteristicas);
+      }
+    } catch (error) {
+      // Los registros anteriores guardaban dispositivos como texto plano.
+    }
+
+    return [{ nombre: 'Dispositivo', caracteristicas: String(value).trim() }];
+  }
+  function formatDevices(value){
+    const devices = parseProjectDevices(value);
+    if (!devices.length) return '';
+
+    return devices.map(device => `
+      <div class="mb-3 last:mb-0">
+        <div class="font-semibold">${esc(device.nombre || 'Sin nombre')}</div>
+        <div class="text-sm text-gray-700">${nl2br(device.caracteristicas)}</div>
+      </div>
+    `).join('');
   }
   function compareByKey(a,b,key,dir='asc'){
     const d = dir === 'asc' ? 1 : -1;
@@ -341,9 +387,11 @@
       await saveProject();
     });
     $('#cancelProjectEdit').addEventListener('click', resetProjectForm);
+    $('#addDeviceBtn').addEventListener('click', () => addDeviceField());
 
     loadMaterials();
     loadProjects();
+    addDeviceField();
     updateSortUI();
     updateProjectSortUI();
   });
@@ -460,8 +508,9 @@
       <tr>
         <td class="px-4 py-2 align-top">${esc(item.id)}</td>
         <td class="px-4 py-2 align-top font-semibold">${esc(item.nombre)}</td>
+        <td class="px-4 py-2 align-top">${esc(item.tipo || 'Gabinete')}</td>
         <td class="px-4 py-2 align-top whitespace-pre-line">${nl2br(item.caracteristicas)}</td>
-        <td class="px-4 py-2 align-top whitespace-pre-line">${nl2br(item.dispositivos)}</td>
+        <td class="px-4 py-2 align-top">${formatDevices(item.dispositivos)}</td>
         <td class="px-4 py-2 align-top whitespace-pre-line">${nl2br(item.diagramas)}</td>
         <td class="px-4 py-2 align-top">
           <span class="inline-block px-2 py-1 rounded ${ageClass(item.updated_at)}">
@@ -474,6 +523,42 @@
         </td>
       </tr>
     `).join('');
+  }
+
+  function addDeviceField(device = {}){
+    const wrapper = document.createElement('div');
+    wrapper.className = 'device-row grid grid-cols-1 md:grid-cols-[minmax(180px,1fr)_minmax(260px,2fr)_auto] gap-3 rounded-md border border-gray-200 p-3';
+    wrapper.innerHTML = `
+      <input type="text" placeholder="Nombre del dispositivo"
+             value="${esc(device.nombre)}"
+             class="device-name block w-full p-3 border rounded-md focus:ring focus:ring-blue-200"/>
+      <textarea rows="2" placeholder="Características del dispositivo"
+                class="device-features block w-full p-3 border rounded-md focus:ring focus:ring-blue-200">${esc(device.caracteristicas)}</textarea>
+      <button type="button"
+              class="remove-device px-4 py-2 rounded-md bg-red-50 hover:bg-red-100 text-red-700 md:self-start">
+        Eliminar
+      </button>
+    `;
+    wrapper.querySelector('.remove-device').addEventListener('click', () => {
+      wrapper.remove();
+      if (!document.querySelectorAll('.device-row').length) addDeviceField();
+    });
+    $('#devicesList').appendChild(wrapper);
+  }
+
+  function setDeviceFields(devices){
+    $('#devicesList').innerHTML = '';
+    const rows = devices.length ? devices : [{}];
+    rows.forEach(device => addDeviceField(device));
+  }
+
+  function collectDevices(){
+    return [...document.querySelectorAll('.device-row')]
+      .map(row => ({
+        nombre: row.querySelector('.device-name').value.trim(),
+        caracteristicas: row.querySelector('.device-features').value.trim()
+      }))
+      .filter(device => device.nombre || device.caracteristicas);
   }
 
   // ---------- CRUD ----------
@@ -515,8 +600,9 @@
   async function saveProject(){
     const id              = $('#project_id').value;
     const nombre          = $('#project_nombre').value.trim();
+    const tipo            = $('#project_tipo').value;
     const caracteristicas = $('#project_caracteristicas').value.trim();
-    const dispositivos    = $('#project_dispositivos').value.trim();
+    const dispositivos    = collectDevices();
     const diagramas       = $('#project_diagramas').value.trim();
 
     if (!nombre){
@@ -526,8 +612,9 @@
 
     const fd = new FormData();
     fd.append('nombre',          nombre);
+    fd.append('tipo',            tipo);
     fd.append('caracteristicas', caracteristicas);
-    fd.append('dispositivos',    dispositivos);
+    fd.append('dispositivos',    JSON.stringify(dispositivos));
     fd.append('diagramas',       diagramas);
 
     if (id) { fd.append('action','projects_update'); fd.append('id', id); }
@@ -554,6 +641,7 @@
   function resetProjectForm(){
     $('#projectForm').reset();
     $('#project_id').value = '';
+    setDeviceFields([{}]);
     $('#cancelProjectEdit').classList.add('hidden');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -577,8 +665,9 @@
     if (!item) return;
     $('#project_id').value              = item.id;
     $('#project_nombre').value          = item.nombre ?? '';
+    $('#project_tipo').value            = item.tipo || 'Gabinete';
     $('#project_caracteristicas').value = item.caracteristicas ?? '';
-    $('#project_dispositivos').value    = item.dispositivos ?? '';
+    setDeviceFields(parseProjectDevices(item.dispositivos));
     $('#project_diagramas').value       = item.diagramas ?? '';
     $('#cancelProjectEdit').classList.remove('hidden');
     showSection('projects');
